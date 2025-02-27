@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Xunit;
@@ -18,7 +19,7 @@ public class SearchSpecs
         var results = await youtube.Search.GetResultsAsync("undead corporation");
 
         // Assert
-        results.Should().HaveCountGreaterOrEqualTo(50);
+        results.Should().HaveCountGreaterThanOrEqualTo(50);
         results
             .Should()
             .Contain(r =>
@@ -36,7 +37,7 @@ public class SearchSpecs
         var results = await youtube.Search.GetResultsAsync("\"dune 2\" ending");
 
         // Assert
-        results.Should().HaveCountGreaterOrEqualTo(50);
+        results.Should().HaveCountGreaterThanOrEqualTo(50);
         results.Should().Contain(r => r.Title.Contains("dune", StringComparison.OrdinalIgnoreCase));
     }
 
@@ -52,7 +53,7 @@ public class SearchSpecs
         var results = await youtube.Search.GetResultsAsync("נועה קירל");
 
         // Assert
-        results.Should().HaveCountGreaterOrEqualTo(50);
+        results.Should().HaveCountGreaterThanOrEqualTo(50);
         results
             .Should()
             .Contain(r => r.Title.Contains("נועה קירל", StringComparison.OrdinalIgnoreCase));
@@ -70,7 +71,7 @@ public class SearchSpecs
         var results = await youtube.Search.GetResultsAsync("\"נועה קירל\"");
 
         // Assert
-        results.Should().HaveCountGreaterOrEqualTo(50);
+        results.Should().HaveCountGreaterThanOrEqualTo(50);
         results
             .Should()
             .Contain(r => r.Title.Contains("נועה קירל", StringComparison.OrdinalIgnoreCase));
@@ -86,7 +87,7 @@ public class SearchSpecs
         var videos = await youtube.Search.GetVideosAsync("undead corporation");
 
         // Assert
-        videos.Should().HaveCountGreaterOrEqualTo(50);
+        videos.Should().HaveCountGreaterThanOrEqualTo(50);
     }
 
     [Fact]
@@ -100,6 +101,16 @@ public class SearchSpecs
 
         // Assert
         playlists.Should().NotBeEmpty();
+
+        var last = playlists.Last();
+
+        last.Title.Should().NotBeNullOrWhiteSpace();
+        last.Author.Should().NotBeNull();
+        last.Thumbnails.Should().NotBeEmpty();
+
+        var lastThumb = last.Thumbnails.Last();
+        lastThumb.Url.Should().NotBeNullOrWhiteSpace();
+        lastThumb.Resolution.Should().NotBeSameAs(default(Resolution));
     }
 
     [Fact]
