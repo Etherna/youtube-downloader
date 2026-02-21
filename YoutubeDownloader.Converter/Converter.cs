@@ -83,8 +83,8 @@ internal partial class Converter(VideoClient videoClient, FFmpeg ffmpeg, Convers
             }
         }
 
-        // MP4
-        if (container == Container.Mp4)
+        // MP4: explicitly specify the codec for subtitles, otherwise they don't get embedded.
+        if (container == Container.Mp4 && subtitleInputs.Any())
         {
             //explicitly specify the codec for subtitles, otherwise they won't get embedded
             if (subtitleInputs.Any())
@@ -94,21 +94,13 @@ internal partial class Converter(VideoClient videoClient, FFmpeg ffmpeg, Convers
             arguments.Add("-movflags").Add("faststart");
         }
 
-        // MP3: explicitly specify the bitrate for audio streams, otherwise their metadata
-        // might contain invalid total duration.
+        // MP3: force the audio streams to be re-encoded by explicitly specifying quality,
+        // otherwise the output file metadata may end up being corrupted.
         // https://superuser.com/a/893044
         if (container == Container.Mp3)
         {
-            var lastAudioStreamIndex = 0;
-            foreach (var streamInput in streamInputs)
-            {
-                if (streamInput.Info is IAudioStreamInfo audioStreamInfo)
-                {
-                    arguments
-                        .Add($"-b:a:{lastAudioStreamIndex++}")
-                        .Add(Math.Round(audioStreamInfo.Bitrate.KiloBitsPerSecond) + "K");
-                }
-            }
+            // Have FFmpeg determine the best quality possible
+            arguments.Add("-q:a").Add(0);
         }
 
         // Metadata for stream inputs
@@ -168,8 +160,10 @@ internal partial class Converter(VideoClient videoClient, FFmpeg ffmpeg, Convers
             // Language codes can be stored in any format, but most players expect
             // three-letter codes, so we'll try to convert to that first.
             var languageCode =
-                subtitleInput.Info.Language.TryGetThreeLetterCode()
-                ?? subtitleInput.Info.Language.Code;
+                subtitleInput.Info.Language.TryGetThreeLetterCode() ?? subtitleInput
+                    .Info
+                    .Language
+                    .Code;
 
             arguments
                 .Add($"-metadata:s:s:{i}")

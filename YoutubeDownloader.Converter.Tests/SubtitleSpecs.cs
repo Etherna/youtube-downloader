@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Xunit;
 using YoutubeExplode.Converter.Tests.Utils;
+using YoutubeExplode.Converter.Tests.Utils.Extensions;
 using YoutubeExplode.Videos.Streams;
 
 namespace YoutubeExplode.Converter.Tests;
@@ -19,7 +20,7 @@ public class SubtitleSpecs : IAsyncLifetime
     public async Task I_can_download_a_video_as_a_single_mp4_file_with_subtitles()
     {
         // Arrange
-        var youtube = new YoutubeClient();
+        using var youtube = new YoutubeClient();
 
         using var dir = TempDir.Create();
         var filePath = Path.Combine(dir.Path, "video.mp4");
@@ -47,8 +48,7 @@ public class SubtitleSpecs : IAsyncLifetime
 
         foreach (var trackInfo in trackInfos)
         {
-            FileEx
-                .ContainsBytes(filePath, Encoding.ASCII.GetBytes(trackInfo.Language.Name))
+            File.ContainsBytes(filePath, Encoding.ASCII.GetBytes(trackInfo.Language.Name))
                 .Should()
                 .BeTrue();
         }
@@ -58,7 +58,7 @@ public class SubtitleSpecs : IAsyncLifetime
     public async Task I_can_download_a_video_as_a_single_webm_file_with_subtitles()
     {
         // Arrange
-        var youtube = new YoutubeClient();
+        using var youtube = new YoutubeClient();
 
         using var dir = TempDir.Create();
         var filePath = Path.Combine(dir.Path, "video.webm");
@@ -86,8 +86,7 @@ public class SubtitleSpecs : IAsyncLifetime
 
         foreach (var trackInfo in trackInfos)
         {
-            FileEx
-                .ContainsBytes(filePath, Encoding.ASCII.GetBytes(trackInfo.Language.Name))
+            File.ContainsBytes(filePath, Encoding.ASCII.GetBytes(trackInfo.Language.Name))
                 .Should()
                 .BeTrue();
         }

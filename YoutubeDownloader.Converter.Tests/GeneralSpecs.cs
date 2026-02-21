@@ -8,6 +8,7 @@ using Gress;
 using Xunit;
 using Xunit.Abstractions;
 using YoutubeExplode.Converter.Tests.Utils;
+using YoutubeExplode.Converter.Tests.Utils.Extensions;
 using YoutubeExplode.Videos.Streams;
 
 namespace YoutubeExplode.Converter.Tests;
@@ -22,7 +23,7 @@ public class GeneralSpecs(ITestOutputHelper testOutput) : IAsyncLifetime
     public async Task I_can_download_a_video_as_a_single_mp4_file()
     {
         // Arrange
-        var youtube = new YoutubeClient();
+        using var youtube = new YoutubeClient();
 
         using var dir = TempDir.Create();
         var filePath = Path.Combine(dir.Path, "video.mp4");
@@ -38,7 +39,7 @@ public class GeneralSpecs(ITestOutputHelper testOutput) : IAsyncLifetime
     public async Task I_can_download_a_video_as_a_single_webm_file()
     {
         // Arrange
-        var youtube = new YoutubeClient();
+        using var youtube = new YoutubeClient();
 
         using var dir = TempDir.Create();
         var filePath = Path.Combine(dir.Path, "video.webm");
@@ -54,7 +55,7 @@ public class GeneralSpecs(ITestOutputHelper testOutput) : IAsyncLifetime
     public async Task I_can_download_a_video_as_a_single_mp3_file()
     {
         // Arrange
-        var youtube = new YoutubeClient();
+        using var youtube = new YoutubeClient();
 
         using var dir = TempDir.Create();
         var filePath = Path.Combine(dir.Path, "video.mp3");
@@ -70,7 +71,7 @@ public class GeneralSpecs(ITestOutputHelper testOutput) : IAsyncLifetime
     public async Task I_can_download_a_video_as_a_single_ogg_file()
     {
         // Arrange
-        var youtube = new YoutubeClient();
+        using var youtube = new YoutubeClient();
 
         using var dir = TempDir.Create();
         var filePath = Path.Combine(dir.Path, "video.ogg");
@@ -86,7 +87,7 @@ public class GeneralSpecs(ITestOutputHelper testOutput) : IAsyncLifetime
     public async Task I_can_download_a_video_as_a_single_mp4_file_with_multiple_streams()
     {
         // Arrange
-        var youtube = new YoutubeClient();
+        using var youtube = new YoutubeClient();
 
         using var dir = TempDir.Create();
         var filePath = Path.Combine(dir.Path, "video.mp4");
@@ -121,8 +122,7 @@ public class GeneralSpecs(ITestOutputHelper testOutput) : IAsyncLifetime
         {
             if (streamInfo.AudioLanguage is not null)
             {
-                FileEx
-                    .ContainsBytes(
+                File.ContainsBytes(
                         filePath,
                         Encoding.ASCII.GetBytes(streamInfo.AudioLanguage.Value.Name)
                     )
@@ -133,8 +133,7 @@ public class GeneralSpecs(ITestOutputHelper testOutput) : IAsyncLifetime
 
         foreach (var streamInfo in videoStreamInfos)
         {
-            FileEx
-                .ContainsBytes(filePath, Encoding.ASCII.GetBytes(streamInfo.VideoQuality.Label))
+            File.ContainsBytes(filePath, Encoding.ASCII.GetBytes(streamInfo.VideoQuality.Label))
                 .Should()
                 .BeTrue();
         }
@@ -144,7 +143,7 @@ public class GeneralSpecs(ITestOutputHelper testOutput) : IAsyncLifetime
     public async Task I_can_download_a_video_as_a_single_webm_file_with_multiple_streams()
     {
         // Arrange
-        var youtube = new YoutubeClient();
+        using var youtube = new YoutubeClient();
 
         using var dir = TempDir.Create();
         var filePath = Path.Combine(dir.Path, "video.webm");
@@ -179,8 +178,7 @@ public class GeneralSpecs(ITestOutputHelper testOutput) : IAsyncLifetime
         {
             if (streamInfo.AudioLanguage is not null)
             {
-                FileEx
-                    .ContainsBytes(
+                File.ContainsBytes(
                         filePath,
                         Encoding.ASCII.GetBytes(streamInfo.AudioLanguage.Value.Name)
                     )
@@ -191,18 +189,17 @@ public class GeneralSpecs(ITestOutputHelper testOutput) : IAsyncLifetime
 
         foreach (var streamInfo in videoStreamInfos)
         {
-            FileEx
-                .ContainsBytes(filePath, Encoding.ASCII.GetBytes(streamInfo.VideoQuality.Label))
+            File.ContainsBytes(filePath, Encoding.ASCII.GetBytes(streamInfo.VideoQuality.Label))
                 .Should()
                 .BeTrue();
         }
     }
 
     [Fact]
-    public async Task I_can_download_a_video_using_custom_conversion_settings()
+    public async Task I_can_download_a_video_with_custom_conversion_settings()
     {
         // Arrange
-        var youtube = new YoutubeClient();
+        using var youtube = new YoutubeClient();
 
         using var dir = TempDir.Create();
         var filePath = Path.Combine(dir.Path, "video.mp3");
@@ -225,22 +222,21 @@ public class GeneralSpecs(ITestOutputHelper testOutput) : IAsyncLifetime
     public async Task I_can_try_to_download_a_video_and_get_an_error_if_the_conversion_settings_are_invalid()
     {
         // Arrange
-        var youtube = new YoutubeClient();
+        using var youtube = new YoutubeClient();
 
         using var dir = TempDir.Create();
         var filePath = Path.Combine(dir.Path, "video.mp4");
 
         // Act & assert
-        var ex = await Assert.ThrowsAnyAsync<Exception>(
-            async () =>
-                await youtube.Videos.DownloadAsync(
-                    "9bZkp7q19f0",
-                    filePath,
-                    o =>
-                        o.SetFFmpegPath(FFmpeg.FilePath)
-                            .SetContainer("invalid_format")
-                            .SetPreset(ConversionPreset.UltraFast)
-                )
+        var ex = await Assert.ThrowsAnyAsync<Exception>(async () =>
+            await youtube.Videos.DownloadAsync(
+                "9bZkp7q19f0",
+                filePath,
+                o =>
+                    o.SetFFmpegPath(FFmpeg.FilePath)
+                        .SetContainer("invalid_format")
+                        .SetPreset(ConversionPreset.UltraFast)
+            )
         );
 
         Directory.EnumerateFiles(dir.Path, "*", SearchOption.AllDirectories).Should().BeEmpty();
@@ -252,7 +248,7 @@ public class GeneralSpecs(ITestOutputHelper testOutput) : IAsyncLifetime
     public async Task I_can_download_a_video_while_tracking_progress()
     {
         // Arrange
-        var youtube = new YoutubeClient();
+        using var youtube = new YoutubeClient();
 
         using var dir = TempDir.Create();
         var filePath = Path.Combine(dir.Path, "video.mp3");

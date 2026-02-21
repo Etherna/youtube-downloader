@@ -3,7 +3,7 @@
 [![Version](https://img.shields.io/nuget/v/YoutubeExplode.Converter.svg)](https://nuget.org/packages/YoutubeExplode.Converter)
 [![Downloads](https://img.shields.io/nuget/dt/YoutubeExplode.Converter.svg)](https://nuget.org/packages/YoutubeExplode.Converter)
 
-**YoutubeExplode.Converter** is an extension package for **YoutubeExplode** that provides the capability to download YouTube videos by muxing separate streams into a single file.
+**YoutubeExplode.Converter** is an extension package for **YoutubeExplode** that provides the capability to download YouTube videos into a single file by fetching individual streams and muxing them.
 This package relies on [FFmpeg](https://ffmpeg.org) under the hood.
 
 ## Install
@@ -28,18 +28,18 @@ For example, to download a video in the specified format using the highest quali
 using YoutubeExplode;
 using YoutubeExplode.Converter;
 
-var youtube = new YoutubeClient();
+using var youtube = new YoutubeClient();
 
 var videoUrl = "https://youtube.com/watch?v=u_yIGGhubZs";
 await youtube.Videos.DownloadAsync(videoUrl, "video.mp4");
 ```
 
-Under the hood, this resolves the video's media streams, downloads the best candidates based on format, bitrate, framerate, and quality, and muxes them together into a single file.
+Internally, this resolves the video's media streams, downloads the best candidates based on format, bitrate, framerate, and quality, and muxes them together into a single file.
 
-> **Note**:
+> [!NOTE]
 > If the specified output format is a known audio-only container (e.g. `mp3` or `ogg`) then only the audio stream is downloaded.
 
-> **Warning**:
+> [!WARNING]
 > Stream muxing is a resource-intensive process, especially when transcoding is involved.
 > To avoid transcoding, consider specifying either `mp4` or `webm` for the output format, as these are the containers that YouTube uses for most of its streams. 
 
@@ -51,13 +51,14 @@ To configure various aspects of the conversion process, use the following overlo
 using YoutubeExplode;
 using YoutubeExplode.Converter;
 
-var youtube = new YoutubeClient();
+using var youtube = new YoutubeClient();
 var videoUrl = "https://youtube.com/watch?v=u_yIGGhubZs";
 
 await youtube.Videos.DownloadAsync(videoUrl, "video.mp4", o => o
     .SetContainer("webm") // override format
     .SetPreset(ConversionPreset.UltraFast) // change preset
     .SetFFmpegPath("path/to/ffmpeg") // custom FFmpeg location
+    .SetEnvironmentVariable("FFREPORT", "file=ffreport.log") // custom environment variable(s) passed to FFmpeg
 );
 ```
 
@@ -70,7 +71,7 @@ using YoutubeExplode;
 using YoutubeExplode.Videos.Streams;
 using YoutubeExplode.Converter;
 
-var youtube = new YoutubeClient();
+using var youtube = new YoutubeClient();
 
 // Get stream manifest
 var videoUrl = "https://youtube.com/watch?v=u_yIGGhubZs";
@@ -89,10 +90,12 @@ var videoStreamInfo = streamManifest
     .First(s => s.VideoQuality.Label == "1080p60");
 
 // Download and mux streams into a single file
-var streamInfos = new IStreamInfo[] { audioStreamInfo, videoStreamInfo };
-await youtube.Videos.DownloadAsync(streamInfos, new ConversionRequestBuilder("video.mp4").Build());
+await youtube.Videos.DownloadAsync(
+    [audioStreamInfo, videoStreamInfo],
+    new ConversionRequestBuilder("video.mp4").Build()
+);
 ```
 
-> **Warning**:
+> [!WARNING]
 > Stream muxing is a resource-intensive process, especially when transcoding is involved.
 > To avoid transcoding, consider prioritizing streams that are already encoded in the desired format (e.g. `mp4` or `webm`).

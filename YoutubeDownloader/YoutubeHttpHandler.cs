@@ -24,20 +24,24 @@ internal class YoutubeHttpHandler : ClientDelegatingHandler
     )
         : base(http, disposeClient)
     {
-        // Pre-fill cookies
-        foreach (var cookie in initialCookies)
-            _cookieContainer.Add(cookie);
-
         // Consent to the use of cookies on YouTube.
         // This is required to access some personalized content, such as mix playlists.
         // https://github.com/Tyrrrz/YoutubeExplode/issues/730
         // https://github.com/Tyrrrz/YoutubeExplode/issues/732
+        // https://github.com/Tyrrrz/YoutubeExplode/issues/907
+        // The cookie is supposed to be invalidated after 13 months, at which point the value
+        // becomes invalid and needs to be manually replaced in code with a new one.
+        // https://policies.google.com/technologies/cookies/embedded
         _cookieContainer.Add(
-            new Cookie("SOCS", "CAISEwgDEgk2NzM5OTg2ODUaAmVuIAEaBgiA6p23Bg")
+            new Cookie("SOCS", "CAISEwgDEgk4MTM4MzYzNTIaAmVuIAEaBgiApPzGBg")
             {
                 Domain = "youtube.com",
             }
         );
+
+        // Add user-supplied cookies
+        foreach (var cookie in initialCookies)
+            _cookieContainer.Add(cookie);
     }
 
     private string? TryGenerateAuthHeaderValue(Uri uri)
@@ -58,10 +62,10 @@ internal class YoutubeHttpHandler : ClientDelegatingHandler
             return null;
 
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var domain = uri.GetDomain();
-
-        var token = $"{timestamp} {sessionId} {domain}";
-        var tokenHash = Hash.Compute(SHA1.Create(), Encoding.UTF8.GetBytes(token)).ToHex();
+        var token = $"{timestamp} {sessionId} {uri.Domain}";
+        var tokenHash = Convert.ToHexString(
+            Hash.Compute(SHA1.Create(), Encoding.UTF8.GetBytes(token))
+        );
 
         return $"SAPISIDHASH {timestamp}_{tokenHash}";
     }
@@ -99,7 +103,7 @@ internal class YoutubeHttpHandler : ClientDelegatingHandler
         // Set origin
         if (!request.Headers.Contains("Origin"))
         {
-            request.Headers.Add("Origin", request.RequestUri.GetDomain());
+            request.Headers.Add("Origin", request.RequestUri.Domain);
         }
 
         // Set user agent

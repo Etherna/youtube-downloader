@@ -31,7 +31,7 @@ internal class VideoController(HttpClient http)
 
         request.Headers.Add(
             "User-Agent",
-            "com.google.ios.youtube/19.45.4 (iPhone16,2; U; CPU iOS 18_1_0 like Mac OS X; US)"
+            "com.google.android.youtube/20.10.38 (Linux; U; ANDROID 11) gzip"
         );
 
         using var response = await Http.SendAsync(request, cancellationToken);
@@ -94,13 +94,10 @@ internal class VideoController(HttpClient http)
 
         // The most optimal client to impersonate is any mobile client, because they
         // don't require signature deciphering (for both normal and n-parameter signatures).
-        // However, we can't use the ANDROID client because it has a limitation, preventing it
-        // from downloading multiple streams from the same manifest (or the same stream multiple times).
-        // https://github.com/Tyrrrz/YoutubeExplode/issues/705
-        // Previously, we were using ANDROID_TESTSUITE as a workaround, which appeared to offer the same
-        // functionality, but without the aforementioned limitation. However, YouTube discontinued this
-        // client, so now we have to use IOS instead.
-        // https://github.com/Tyrrrz/YoutubeExplode/issues/817
+        // YouTube now requires Proof of Origin (PO) tokens for most Innertube clients (iOS, Android, etc.),
+        // causing stream downloads to fail with 403 Forbidden errors. The ANDROID_VR client (Oculus Quest)
+        // still works without PO tokens and provides full format access.
+        // https://github.com/Tyrrrz/YoutubeExplode/issues/933
         using var request = new HttpRequestMessage(
             HttpMethod.Post,
             "https://www.youtube.com/youtubei/v1/player"
@@ -114,13 +111,13 @@ internal class VideoController(HttpClient http)
               "contentCheckOk": true,
               "context": {
                 "client": {
-                  "clientName": "IOS",
-                  "clientVersion": "19.45.4",
-                  "deviceMake": "Apple",
-                  "deviceModel": "iPhone16,2",
+                  "clientName": "ANDROID_VR",
+                  "clientVersion": "1.60.19",
+                  "deviceMake": "Oculus",
+                  "deviceModel": "Quest 3",
+                  "osName": "Android",
+                  "osVersion": "12L",
                   "platform": "MOBILE",
-                  "osName": "IOS",
-                  "osVersion": "18.1.0.22B83",
                   "visitorData": {{Json.Serialize(visitorData)}},
                   "hl": "en",
                   "gl": "US",
@@ -135,7 +132,7 @@ internal class VideoController(HttpClient http)
         // https://github.com/iv-org/invidious/issues/3230#issuecomment-1226887639
         request.Headers.Add(
             "User-Agent",
-            "com.google.ios.youtube/19.45.4 (iPhone16,2; U; CPU iOS 18_1_0 like Mac OS X; US)"
+            "com.google.android.apps.youtube.vr.oculus/1.60.19 (Linux; U; Android 12L; Quest 3 Build/SQ3A.220605.009.A1) gzip"
         );
 
         using var response = await Http.SendAsync(request, cancellationToken);

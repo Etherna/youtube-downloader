@@ -47,6 +47,18 @@ public partial struct VideoId
                 return id;
         }
 
+        // Try to extract the ID from the URL (partially shortened)
+        // https://youtu.be/watch?v=Fcds0_MrgNU
+        {
+            var id = Regex
+                .Match(videoIdOrUrl, @"youtu\.be/watch.*?v=(.*?)(?:\?|&|/|$)")
+                .Groups[1]
+                .Value.Pipe(WebUtility.UrlDecode);
+
+            if (!string.IsNullOrWhiteSpace(id) && IsValid(id))
+                return id;
+        }
+
         // Try to extract the ID from the URL (shortened)
         // https://youtu.be/yIVRs6YSbOM
         {
@@ -128,13 +140,14 @@ public partial struct VideoId
 public partial struct VideoId : IEquatable<VideoId>
 {
     /// <inheritdoc />
-    public bool Equals(VideoId other) => StringComparer.Ordinal.Equals(Value, other.Value);
+    public bool Equals(VideoId other) =>
+        string.Equals(Value, other.Value, StringComparison.Ordinal);
 
     /// <inheritdoc />
     public override bool Equals(object? obj) => obj is VideoId other && Equals(other);
 
     /// <inheritdoc />
-    public override int GetHashCode() => StringComparer.Ordinal.GetHashCode(Value);
+    public override int GetHashCode() => Value.GetHashCode(StringComparison.Ordinal);
 
     /// <summary>
     /// Equality check.
